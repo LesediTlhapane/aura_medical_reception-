@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Volume2, VolumeX, RotateCcw, Moon, Sun, ChevronDown } from 'lucide-react';
+import brandLogo from '../assets/brandlogo.png';
 
 export default function Header({ language, changeLanguage, soundEnabled, toggleSound, onReset }) {
   const languages = [
@@ -11,7 +12,7 @@ export default function Header({ language, changeLanguage, soundEnabled, toggleS
   const [darkMode, setDarkMode] = useState(() => {
     const stored = localStorage.getItem('aura_theme');
     if (stored) return stored === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return false;
   });
 
   const [scrolled, setScrolled] = useState(false);
@@ -56,9 +57,9 @@ export default function Header({ language, changeLanguage, soundEnabled, toggleS
       }`}
     >
       {/* Demo banner */}
-      <div className="flex w-full items-center justify-center gap-2 bg-emerald-500/10 border-b border-emerald-500/10 px-4 py-1.5 dark:bg-emerald-500/5 dark:border-emerald-500/10">
-        <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-breathe" />
-        <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 tracking-wide">
+      <div className="flex w-full items-center justify-center gap-2 bg-[rgba(22,197,216,0.12)] border-b border-[rgba(22,197,216,0.2)] px-4 py-1.5 dark:bg-[rgba(22,197,216,0.08)] dark:border-[rgba(22,197,216,0.16)]">
+        <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--color-brand-cyan)] animate-breathe" />
+        <span className="text-[11px] font-semibold text-[var(--color-brand-navy)] dark:text-[var(--color-brand-slate)] tracking-wide">
           Interactive Product Preview · Aura Tech Intelligence
         </span>
       </div>
@@ -67,28 +68,16 @@ export default function Header({ language, changeLanguage, soundEnabled, toggleS
 
         {/* Logo */}
         <a href="#" className="flex items-center gap-3 group">
-          {/* Logo mark */}
-          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 dark:bg-white overflow-hidden shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path
-                d="M10 2L17 6V14L10 18L3 14V6L10 2Z"
-                className="fill-emerald-400 dark:fill-emerald-500"
-              />
-              <path
-                d="M10 5L14.5 7.5V12.5L10 15L5.5 12.5V7.5L10 5Z"
-                className="fill-white dark:fill-slate-900"
-                fillOpacity="0.15"
-              />
-            </svg>
+          <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-white/90 p-1.5 shadow-sm ring-1 ring-[rgba(106,79,217,0.14)] dark:bg-[rgba(255,255,255,0.08)] dark:ring-[rgba(255,255,255,0.10)]">
+            <img src={brandLogo} alt="Aura brand logo" className="h-full w-full object-contain" />
           </div>
 
-          {/* Brand text */}
           <div className="flex flex-col leading-none">
-            <span className="text-[15px] font-bold tracking-tight text-slate-900 dark:text-white">
+            <span className="text-[15px] font-bold tracking-tight text-[var(--color-brand-navy)] dark:text-white">
               Aura Reception
               <span className="align-super text-[9px] font-normal text-slate-400 dark:text-slate-500 ml-0.5">™</span>
             </span>
-            <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 tracking-wide">
+            <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 tracking-wide">
               by Aura Tech Intelligence
             </span>
           </div>

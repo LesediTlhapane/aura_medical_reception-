@@ -1,5 +1,7 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* =============================================
    AURA RECEPTION™ — PREMIUM DESIGN SYSTEM
@@ -8,34 +10,43 @@
 @theme {
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
+  /* Brand Palette */
+  --color-brand-cyan:    #16C5D8;
+  --color-brand-navy:    #081426;
+  --color-brand-purple:  #6A4FD9;
+  --color-brand-pink:    #E94E97;
+  --color-brand-orange:  #F68B3C;
+  --color-brand-white:   #FFFFFF;
+  --color-brand-slate:   #D9DDE4;
+
   /* Light Mode Palette */
-  --color-aura-bg:        #FCFCFD;
-  --color-aura-surface:   #F7F8FA;
+  --color-aura-bg:        #F8FBFC;
+  --color-aura-surface:   #F3F6FA;
   --color-aura-card:      #FFFFFF;
-  --color-aura-border:    #E8EBF0;
-  --color-aura-border-2:  #D1D5DC;
-  --color-aura-text:      #0F172A;
-  --color-aura-muted:     #64748B;
-  --color-aura-subtle:    #94A3B8;
+  --color-aura-border:    #E4E8EF;
+  --color-aura-border-2:  #CBD4E1;
+  --color-aura-text:      #081426;
+  --color-aura-muted:     #55637A;
+  --color-aura-subtle:    #7A879C;
 
   /* Dark Mode Palette */
-  --color-navy-950:  #060C1A;
-  --color-navy-900:  #0B1428;
-  --color-navy-850:  #0F1E38;
-  --color-navy-800:  #162040;
-  --color-navy-750:  #1C2A50;
-  --color-navy-700:  #243060;
-  --color-navy-600:  #2E3A6E;
-  --color-navy-500:  #3A487C;
+  --color-navy-950:  #081426;
+  --color-navy-900:  #0D1D34;
+  --color-navy-850:  #142742;
+  --color-navy-800:  #1A314E;
+  --color-navy-750:  #213D5B;
+  --color-navy-700:  #294767;
+  --color-navy-600:  #345474;
+  --color-navy-500:  #3F607F;
 
   /* Shared Accent Tokens */
-  --color-emerald-vivid: #10B981;
-  --color-emerald-soft:  #ECFDF5;
-  --color-emerald-deep:  #065F46;
-  --color-blue-vivid:    #3B82F6;
-  --color-blue-soft:     #EFF6FF;
-  --color-amber-vivid:   #F59E0B;
-  --color-amber-soft:    #FFFBEB;
+  --color-emerald-vivid: #16C5D8;
+  --color-emerald-soft:  #ECFDFF;
+  --color-emerald-deep:  #0A6F7D;
+  --color-blue-vivid:    #6A4FD9;
+  --color-blue-soft:     #F4F1FF;
+  --color-amber-vivid:   #F68B3C;
+  --color-amber-soft:    #FFF4EA;
 
   /* Slate Scale (used throughout) */
   --color-slate-150: #F1F5F9;
@@ -67,15 +78,25 @@ html {
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #FCFCFD;
-  color: #0F172A;
+  background: linear-gradient(135deg, #F8FBFC 0%, #F1F5F9 100%);
+  color: #081426;
   line-height: 1.6;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .dark body {
-  background-color: #060C1A;
-  color: #E2E8F0;
+  background: linear-gradient(135deg, #081426 0%, #10253F 100%);
+  color: #D9DDE4;
+}
+
+.app-shell {
+  background: linear-gradient(135deg, #F8FBFC 0%, #F1F5F9 100%);
+  color: #081426;
+}
+
+.dark .app-shell {
+  background: linear-gradient(135deg, #081426 0%, #10253F 100%);
+  color: #D9DDE4;
 }
 
 /* =============================================
@@ -242,7 +263,7 @@ h1, h2, h3, h4, h5, h6 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: #0F172A;
+  background: linear-gradient(135deg, #16C5D8 0%, #6A4FD9 55%, #E94E97 100%);
   color: #FFFFFF;
   font-weight: 600;
   font-size: 14px;
@@ -255,9 +276,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-primary:hover {
-  background: #1E293B;
+  background: linear-gradient(135deg, #1FD4E3 0%, #7763E5 55%, #EF5B9F 100%);
   transform: translateY(-1px);
-  box-shadow: 0 8px 25px -5px rgba(15, 23, 42, 0.35);
+  box-shadow: 0 12px 30px -8px rgba(106, 79, 217, 0.28);
 }
 
 .btn-primary:active { transform: translateY(0); }
@@ -266,41 +287,42 @@ h1, h2, h3, h4, h5, h6 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: transparent;
-  color: #334155;
+  background: rgba(255,255,255,0.8);
+  color: #081426;
   font-weight: 600;
   font-size: 14px;
   padding: 11px 23px;
   border-radius: 12px;
-  border: 1px solid #E8EBF0;
+  border: 1px solid rgba(106, 79, 217, 0.18);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .btn-secondary:hover {
-  background: #F7F8FA;
-  border-color: #D1D5DC;
+  background: rgba(244, 241, 255, 0.95);
+  border-color: rgba(106, 79, 217, 0.32);
   transform: translateY(-1px);
 }
 
 .dark .btn-primary {
-  background: #E2E8F0;
-  color: #0F172A;
+  background: linear-gradient(135deg, #16C5D8 0%, #6A4FD9 55%, #E94E97 100%);
+  color: #FFFFFF;
 }
 
 .dark .btn-primary:hover {
-  background: #F8FAFC;
-  box-shadow: 0 8px 25px -5px rgba(226, 232, 240, 0.25);
+  background: linear-gradient(135deg, #1ED4E6 0%, #7A64E8 55%, #EE5A9E 100%);
+  box-shadow: 0 12px 30px -8px rgba(22, 197, 216, 0.28);
 }
 
 .dark .btn-secondary {
-  color: #CBD5E1;
-  border-color: rgba(255, 255, 255, 0.08);
+  color: #D9DDE4;
+  background: rgba(8, 20, 38, 0.7);
+  border-color: rgba(22, 197, 216, 0.2);
 }
 
 .dark .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(12, 29, 51, 0.9);
+  border-color: rgba(22, 197, 216, 0.35);
 }
 
 /* =============================================
@@ -341,6 +363,41 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: none !important;
     background: white !important;
   }
+}
+
+/* =============================================
+   BRAND ACCENT OVERRIDES
+   ============================================= */
+
+.bg-indigo-50,
+.bg-indigo-500\/10,
+.bg-emerald-50,
+.bg-emerald-500\/10,
+.border-indigo-100,
+.border-indigo-500\/20,
+.border-emerald-100,
+.border-emerald-500\/20,
+.text-indigo-700,
+.text-indigo-500,
+.text-indigo-400,
+.text-emerald-700,
+.text-emerald-600,
+.text-emerald-400 {
+  color: var(--color-brand-cyan);
+}
+
+.bg-indigo-50,
+.bg-indigo-500\/10,
+.bg-emerald-50,
+.bg-emerald-500\/10 {
+  background-color: rgba(22, 197, 216, 0.12);
+}
+
+.border-indigo-100,
+.border-indigo-500\/20,
+.border-emerald-100,
+.border-emerald-500\/20 {
+  border-color: rgba(22, 197, 216, 0.22);
 }
 
 /* =============================================

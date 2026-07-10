@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Mail, Phone, Calendar, Check, X, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function AuraCTA() {
-  const [modalOpen, setModalOpen] = useState(false);
+export default function AuraCTA({ modalOpen: controlledModalOpen, setModalOpen: controlledSetModalOpen }) {
+  const [localModalOpen, localSetModalOpen] = useState(false);
+  const modalOpen = controlledModalOpen !== undefined ? controlledModalOpen : localModalOpen;
+  const setModalOpen = controlledSetModalOpen !== undefined ? controlledSetModalOpen : localSetModalOpen;
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
