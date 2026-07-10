@@ -34,29 +34,27 @@ export default function ChatWindow({
     sendPatientMessage(query);
   };
 
-  const renderMessageContent = (msg) => {
-    if (msg.type === 'wizard') {
-      return (
-        <div className="my-1 w-full">
-          <BookingWizard
-            preselectedSpecialist={msg.payload}
-            onComplete={completeBooking}
-            onCancel={onCancelBooking}
-          />
-        </div>
-      );
+  // Handle booking confirmation from inline buttons
+  const handleBookingConfirm = (confirmed) => {
+    if (confirmed) {
+      // If the wizard is already showing, we don't need to do anything
+      // The user will fill out the wizard directly
+      // Just scroll to it
+      const wizardElement = document.querySelector('.booking-wizard-container');
+      if (wizardElement) {
+        wizardElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // Cancel booking
+      if (onCancelBooking) {
+        onCancelBooking();
+      }
     }
+  };
 
-    if (msg.type === 'receipt') {
-      return (
-        <div className="my-1 print-card w-full">
-          <ConfirmationCard booking={msg.payload} />
-        </div>
-      );
-    }
-
-    // Render markdown-style bold + line breaks
-    const formattedText = msg.text.split('\n').map((paragraph, index) => {
+  const renderFormattedText = (text) => {
+    if (!text) return null;
+    return text.split('\n').map((paragraph, index) => {
       const regex = /\*\*(.*?)\*\*/g;
       const parts = paragraph.split(regex);
       if (!paragraph.trim()) return <br key={index} />;
@@ -70,8 +68,87 @@ export default function ChatWindow({
         </p>
       );
     });
+  };
 
-    return <div className="text-[13px] leading-relaxed">{formattedText}</div>;
+  const renderMessageContent = (msg) => {
+    // Handle triage responses - show booking wizard
+    if (msg.type === 'triage' && msg.specialist) {
+      return (
+        <div className="my-1 w-full booking-wizard-container">
+          <div className="mb-3 text-sm text-slate-600 dark:text-slate-300">
+            {renderFormattedText(msg.text)}
+          </div>
+          
+          {/* Show BookingWizard */}
+          <BookingWizard
+            preselectedSpecialist={msg.specialist}
+            onComplete={completeBooking}
+            onCancel={onCancelBooking}
+          />
+          
+          {/* Inline confirmation buttons */}
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={() => handleBookingConfirm(true)}
+              className="px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600 transition"
+            >
+              ✅ Yes, book it
+            </button>
+            <button
+              onClick={() => handleBookingConfirm(false)}
+              className="px-4 py-2 bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-300 transition dark:bg-slate-700 dark:text-slate-200"
+            >
+              ❌ No, not now
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Handle wizard type (backward compatibility)
+    if (msg.type === 'wizard') {
+      return (
+        <div className="my-1 w-full booking-wizard-container">
+          <BookingWizard
+            preselectedSpecialist={msg.payload}
+            onComplete={completeBooking}
+            onCancel={onCancelBooking}
+          />
+        </div>
+      );
+    }
+
+    // Handle receipt / confirmation
+    if (msg.type === 'receipt') {
+      return (
+        <div className="my-1 print-card w-full">
+          <ConfirmationCard booking={msg.payload} />
+        </div>
+      );
+    }
+
+    // Handle emergency responses with special styling
+    if (msg.isEmergency) {
+      return (
+        <div className="text-[13px] leading-relaxed">
+          {renderFormattedText(msg.text)}
+          <div className="mt-3 p-3 bg-red-50 border-2 border-red-400 rounded-xl dark:bg-red-900/20 dark:border-red-500">
+            <p className="text-red-700 font-bold dark:text-red-400">
+              🚨 EMERGENCY - Call immediately:
+            </p>
+            <a 
+              href="tel:0123456911" 
+              className="inline-block mt-2 px-6 py-3 bg-red-600 text-white font-bold text-lg rounded-xl hover:bg-red-700 transition"
+            >
+              📞 012-345-6911
+            </a>
+          </div>
+        </div>
+      );
+    }
+
+    // Regular text message with formatting
+    return <div className="text-[13px] leading-relaxed">{renderFormattedText(msg.text)}</div>;
   };
 
   const isAIMessage = (msg) => msg.sender === 'ai';
@@ -82,7 +159,6 @@ export default function ChatWindow({
       {/* Chat header */}
       <div className="flex items-center justify-between border-b border-slate-100 bg-white px-5 py-3.5 dark:border-white/5 dark:bg-navy-900/60">
         <div className="flex items-center gap-3">
-          {/* Avatar */}
           <div className="relative">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 dark:bg-white shadow-sm">
               <Sparkles size={15} className="text-emerald-400 dark:text-emerald-500" />
@@ -90,7 +166,6 @@ export default function ChatWindow({
             <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full border-2 border-white bg-emerald-500 dark:border-navy-900">
             </span>
           </div>
-
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-slate-900 dark:text-white">Aura</span>
@@ -99,8 +174,6 @@ export default function ChatWindow({
             <p className="text-[11px] text-slate-400 dark:text-slate-500">Sunrise Medical Centre · Online</p>
           </div>
         </div>
-
-        {/* Status tags */}
         <div className="flex items-center gap-2">
           <span className="hidden sm:flex items-center gap-1.5 text-[10px] font-semibold text-slate-400 dark:text-slate-500">
             <ShieldCheck size={12} className="text-emerald-500" />
@@ -114,13 +187,13 @@ export default function ChatWindow({
         {messages.map((msg) => {
           const isAI = isAIMessage(msg);
           if (msg.text === 'inline-wizard-trigger') return null;
-
-          const isCard = msg.type === 'wizard' || msg.type === 'receipt';
+          
+          const isCard = msg.type === 'wizard' || msg.type === 'receipt' || msg.type === 'triage';
 
           return (
             <div
               key={msg.id}
-              className={`flex items-end gap-2.5 ${isAI ? 'justify-start msg-ai' : 'justify-end msg-patient'} ${isCard ? 'flex-col items-start' : ''}`}
+              className={`flex items-end gap-2.5 ${isAI ? 'justify-start msg-ai' : 'justify-end msg-patient'} ${isCard ? 'flex-col items-start w-full' : ''}`}
             >
               {/* AI avatar */}
               {isAI && !isCard && (
@@ -131,12 +204,11 @@ export default function ChatWindow({
 
               {/* Full-width card messages */}
               {isCard ? (
-                <div className="w-full">
+                <div className="w-full max-w-full">
                   {renderMessageContent(msg)}
                 </div>
               ) : (
-                <div className="flex flex-col" style={{ maxWidth: isCard ? '100%' : '82%' }}>
-                  {/* Message bubble */}
+                <div className="flex flex-col" style={{ maxWidth: '82%' }}>
                   <div
                     className={`rounded-2xl px-4 py-3 shadow-sm ${
                       isAI
@@ -146,8 +218,6 @@ export default function ChatWindow({
                   >
                     {renderMessageContent(msg)}
                   </div>
-
-                  {/* Timestamp */}
                   <span className={`text-[10px] text-slate-400 mt-1 px-1 ${!isAI ? 'text-right' : ''}`}>
                     {msg.timestamp}
                   </span>

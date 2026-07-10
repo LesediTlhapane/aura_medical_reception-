@@ -22,7 +22,8 @@ function App() {
     changeLanguage,
     sendPatientMessage,
     startBooking,
-    completeBooking
+    completeBooking,
+    cancelBooking,
   } = useChatSession();
 
   // Mode state for the Left Pane: 'patient' (Clinic Profile) or 'owner' (ROI Analytics)
@@ -38,8 +39,7 @@ function App() {
   };
 
   const handleCancelBooking = () => {
-    // Inject abort message
-    sendPatientMessage("Cancel booking request");
+    cancelBooking();
   };
 
   return (

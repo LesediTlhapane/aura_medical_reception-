@@ -58,6 +58,7 @@ export const useChatSession = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isBookingActive, setIsBookingActive] = useState(false);
+  const [pendingBookingSpecialist, setPendingBookingSpecialist] = useState(null);
   
   // Dashboard & ROI statistics
   const [stats, setStats] = useState({
@@ -82,6 +83,7 @@ export const useChatSession = () => {
         setLanguage(parsed.language || 'en');
         setSoundEnabled(parsed.soundEnabled !== undefined ? parsed.soundEnabled : true);
         if (parsed.stats) setStats(parsed.stats);
+        if (parsed.pendingBookingSpecialist) setPendingBookingSpecialist(parsed.pendingBookingSpecialist);
       } catch (e) {
         setMessages(initialMessages('en'));
       }
@@ -97,10 +99,11 @@ export const useChatSession = () => {
         messages,
         language,
         soundEnabled,
-        stats
+        stats,
+        pendingBookingSpecialist
       }));
     }
-  }, [messages, language, soundEnabled, stats]);
+  }, [messages, language, soundEnabled, stats, pendingBookingSpecialist]);
 
   const toggleSound = useCallback(() => {
     setSoundEnabled(prev => !prev);
@@ -111,6 +114,7 @@ export const useChatSession = () => {
     const fresh = initialMessages(language);
     setMessages(fresh);
     setIsBookingActive(false);
+    setPendingBookingSpecialist(null);
   }, [language]);
 
   // Handle language switch
@@ -118,6 +122,7 @@ export const useChatSession = () => {
     setLanguage(lang);
     setMessages(initialMessages(lang));
     setIsBookingActive(false);
+    setPendingBookingSpecialist(null);
   }, []);
 
   // Add message to feed
@@ -149,63 +154,111 @@ export const useChatSession = () => {
     }
   }, [soundEnabled]);
 
-  // Initiate Booking Wizard
+  // Initiate Booking Wizard - FIXED
   const startBooking = useCallback(() => {
     setIsBookingActive(true);
-    addMessage('ai', 'inline-wizard-trigger', 'wizard');
-  }, [addMessage]);
-
-  // Complete a booking wizard flow
-  const completeBooking = useCallback((bookingDetails) => {
-    setIsBookingActive(false);
     
-    // Update live metrics on completion
+    // Add the wizard message directly to chat
+    const wizardMsg = {
+      id: `msg-${Date.now()}-wizard`,
+      sender: 'ai',
+      text: '📋 Please fill in your details below to book your appointment.',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: 'wizard',
+      payload: pendingBookingSpecialist || null
+    };
+    
+    setMessages(prev => [...prev, wizardMsg]);
+    
+    // Also add the booking active state message
+    const activeMsg = {
+      id: `msg-${Date.now()}-active`,
+      sender: 'ai',
+      text: 'Booking form is active above...',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: 'info'
+    };
+    
+    setMessages(prev => [...prev, activeMsg]);
+  }, [pendingBookingSpecialist]);
+
+  // Complete a booking wizard flow - FIXED
+  const completeBooking = useCallback((bookingDetails) => {
+    console.log('✅ completeBooking called with:', bookingDetails);
+    setIsBookingActive(false);
+    setPendingBookingSpecialist(null);
+    
+    // Generate reference number
     const refNum = `SRM-2026-${Math.floor(1000 + Math.random() * 9000)}`;
     const newBooking = {
       id: refNum,
-      name: bookingDetails.name,
-      service: bookingDetails.service,
-      doctor: bookingDetails.doctor,
-      date: bookingDetails.date,
-      time: bookingDetails.time,
-      status: "Pending"
+      name: bookingDetails.name || 'Patient',
+      service: bookingDetails.specialist?.name || bookingDetails.service || 'General Consultation',
+      doctor: bookingDetails.doctor || 'Dr. Smith',
+      date: bookingDetails.date || new Date().toISOString().split('T')[0],
+      time: bookingDetails.time || '09:00',
+      status: "Pending Confirmation",
+      phone: bookingDetails.phone || '',
+      email: bookingDetails.email || '',
     };
 
+    // Update stats
     setStats(prev => ({
       ...prev,
       appointmentsRequested: prev.appointmentsRequested + 1,
-      adminHoursSaved: parseFloat((prev.adminHoursSaved + 0.5).toFixed(1)), // booking saves more time than standard chat
+      adminHoursSaved: parseFloat((prev.adminHoursSaved + 0.5).toFixed(1)),
       recentBookings: [newBooking, ...prev.recentBookings]
     }));
 
-    // Post booking card response in chat
-    addMessage('ai', 'Receipt Card Generated', 'receipt', newBooking);
+    // Add receipt message with confirmation
+    const receiptMsg = {
+      id: `msg-${Date.now()}`,
+      sender: 'ai',
+      text: `✅ **Appointment Confirmed!**\n\nThank you ${newBooking.name}, your booking has been submitted.\n\n📋 **Reference:** ${newBooking.id}\n👨‍⚕️ **Service:** ${newBooking.service}\n📅 **Date:** ${newBooking.date}\n⏰ **Time:** ${newBooking.time}\n\nOur team will confirm your booking shortly.`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: 'receipt',
+      payload: newBooking
+    };
+    
+    setMessages(prev => [...prev, receiptMsg]);
 
-    // AI followup message
-    setTimeout(() => {
-      setIsTyping(true);
-      setTimeout(() => {
-        setIsTyping(false);
-        const confirmMsg = {
-          en: "Your appointment request has been logged successfully! Our reception team will review and confirm this within the next hour. Is there anything else I can help you with?",
-          af: "Jou afspraakversoek is suksesvol aangeteken! Ons ontvangspan sal dit binne die volgende uur hersien en bevestig. Is daar enigiets anders waarmee ek kan help?",
-          zu: "Isicelo sakho se-aphoyintimenti sigcinwe kahle! Ithimba lethu lizosibuyekeza liphinde lisiqinisekise phakathi kwehora elilodwa. Kukhona okunye engingakusiza ngakho?"
-        };
-        addMessage('ai', confirmMsg[language] || confirmMsg.en);
-      }, 1000);
-    }, 1500);
-  }, [addMessage, language]);
+    // Play sound if enabled
+    if (soundEnabled) {
+      playChime();
+    }
+  }, [soundEnabled]);
 
-  // Standard patient message handler
+  // Cancel booking
+  const cancelBooking = useCallback(() => {
+    setIsBookingActive(false);
+    setPendingBookingSpecialist(null);
+    const cancelMsg = {
+      id: `msg-${Date.now()}`,
+      sender: 'ai',
+      text: "No problem! Let me know if you change your mind. 😊",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: 'cancelled'
+    };
+    setMessages(prev => [...prev, cancelMsg]);
+  }, []);
+
+  // Standard patient message handler - FIXED
   const sendPatientMessage = useCallback((text) => {
     if (!text.trim()) return;
     
     // Add patient response
     addMessage('patient', text);
     
-    // Check if patient wants to book directly
     const lowercase = text.toLowerCase();
-    if (lowercase.match(/\b(book|appointment|dentist|doctor|gp|physio|specialist|schedul|reserve)\b/) && !isBookingActive) {
+
+    // Check for booking cancellation
+    if (lowercase.match(/\b(no|nope|cancel|not now|later)\b/) && isBookingActive) {
+      cancelBooking();
+      return;
+    }
+    
+    // Check if patient wants to book directly
+    if (lowercase.match(/\b(book|appointment|dentist|doctor|gp|physio|specialist|schedul|reserve|need to see|consult)\b/) && !isBookingActive) {
       setIsTyping(true);
       setTimeout(() => {
         setIsTyping(false);
@@ -231,13 +284,17 @@ export const useChatSession = () => {
       const aiReply = getResponse(text, language);
       addMessage('ai', aiReply.text, aiReply.type, aiReply.specialist);
       
-      // If triage matched a specialist, show a prompt option
-      if (aiReply.type === 'triage') {
-        // Keeps state ready to toggle the booking
+      // If triage matched a specialist, store it for booking
+      if (aiReply.type === 'triage' && aiReply.specialist) {
+        setPendingBookingSpecialist(aiReply.specialist);
+        // Also start booking automatically
+        setTimeout(() => {
+          startBooking();
+        }, 500);
       }
     }, 1200);
     
-  }, [addMessage, isBookingActive, language, startBooking]);
+  }, [addMessage, isBookingActive, language, startBooking, cancelBooking]);
 
   return {
     messages,
@@ -246,11 +303,13 @@ export const useChatSession = () => {
     soundEnabled,
     stats,
     isBookingActive,
+    pendingBookingSpecialist,
     toggleSound,
     resetChat,
     changeLanguage,
     sendPatientMessage,
     startBooking,
-    completeBooking
+    completeBooking,
+    cancelBooking,
   };
 };
